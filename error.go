@@ -7,7 +7,7 @@ import (
 	"github.com/dyweb/gommon/errors"
 )
 
-// TODO: not enough error information is extracted, should print actual error location
+// TODO: not enough error information is extracted, should print actual error location and offending symbol
 
 var _ antlr.ErrorListener = (*ErrorListener)(nil)
 
@@ -32,6 +32,7 @@ func (t ErrorType) String() string {
 	}[t]
 }
 
+// Error is an ANTLR error with type and position information.
 type Error struct {
 	Type   ErrorType
 	Msg    string
@@ -53,8 +54,13 @@ func NewErrorListener() *ErrorListener {
 	}
 }
 
+func (e2 *ErrorListener) ErrorOrNil() error {
+	return e2.errors.ErrorOrNil()
+}
+
 // e2 == engineering 2
-func (e2 ErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
+func (e2 *ErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
+	// TODO: make use of e
 	err := &Error{
 		Type:   ErrorTypeSyntax,
 		Line:   line,
@@ -64,7 +70,7 @@ func (e2 ErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol
 	e2.errors.Append(err)
 }
 
-func (e2 ErrorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
+func (e2 *ErrorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
 	err := &Error{
 		Type: ErrorTypeAmbiguity,
 		Msg:  recognizer.GetTokenStream().GetTextFromInterval(antlr.NewInterval(startIndex, stopIndex)),
@@ -72,7 +78,7 @@ func (e2 ErrorListener) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA,
 	e2.errors.Append(err)
 }
 
-func (e2 ErrorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
+func (e2 *ErrorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
 	err := &Error{
 		Type: ErrorTypeAttemptingFullContext,
 		Msg:  recognizer.GetTokenStream().GetTextFromInterval(antlr.NewInterval(startIndex, stopIndex)),
@@ -80,7 +86,7 @@ func (e2 ErrorListener) ReportAttemptingFullContext(recognizer antlr.Parser, dfa
 	e2.errors.Append(err)
 }
 
-func (e2 ErrorListener) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs antlr.ATNConfigSet) {
+func (e2 *ErrorListener) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs antlr.ATNConfigSet) {
 	err := &Error{
 		Type: ErrorTypeContextSensitivity,
 		Msg:  recognizer.GetTokenStream().GetTextFromInterval(antlr.NewInterval(startIndex, stopIndex)),
